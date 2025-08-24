@@ -1,255 +1,73 @@
-<!DOCTYPE html>
-<html lang="pt-br">
-<head>
-    <meta charset="UTF-8">
-    <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Pokedex</title>
-    <!-- Inclui a fonte Inter do Google Fonts para um visual moderno -->
-    <link rel="preconnect" href="https://fonts.googleapis.com">
-    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
-    <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;700&display=swap" rel="stylesheet">
-    <style>
-        * {
-            margin: 0;
-            padding: 0;
-            box-sizing: border-box;
-            font-family: 'Inter', sans-serif;
-        }
+const pokemonName = document.querySelector('.pokemon__name');
+const pokemonNumber = document.querySelector('.pokemon__number');
+const pokemonImage = document.querySelector('.pokemon__image');
 
-        body {
-            background-color: #3b4cca;
-            display: flex;
-            align-items: center;
-            justify-content: center;
-            min-height: 100vh;
-            color: #fff;
-            padding: 20px;
-        }
+const form = document.querySelector('.form');
+const input = document.querySelector('.input__search');
+const buttonPrev = document.querySelector('.btn-prev');
+const buttonNext = document.querySelector('.btn-next');
 
-        main {
-            display: flex;
-            flex-direction: column;
-            align-items: center;
-            position: relative;
-            width: 100%;
-            max-width: 450px;
-        }
+// Pega a referência para o elemento de áudio
+const pokemonAudio = document.getElementById('audio');
 
-        .pokedex {
-            width: 100%;
-            max-width: 425px;
-            /* A imagem da pokedex é o fundo, então fica abaixo dos outros elementos */
-            position: relative;
-            z-index: 1;
-        }
+// Variável de controle para tocar a música apenas uma vez
+let musicPlayed = false;
+let searchPokemon = 1;
 
-        .pokemon__data {
-            color: #fff;
-            font-size: 1.5rem;
-            text-shadow: 2px 2px 4px rgba(0, 0, 0, 0.3);
-            z-index: 3;
-            position: absolute;
-            top: 25.5%; /* Posição ajustada para o novo design da imagem */
-            left: 50%;
-            transform: translateX(-50%);
-            white-space: nowrap;
-        }
+const fetchPokemon = async(pokemon) => {
+    const APIResponse = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemon}`);
 
-        .pokemon__name {
-            font-weight: 700;
-            text-transform: capitalize;
-        }
+    if (APIResponse.status === 200) {
+        const data = await APIResponse.json();
+        return data;
+    }
+}
 
-        .pokemon__number {
-            font-weight: 400;
-            opacity: 0.8;
-            margin-right: 5px;
-        }
-        
-        .pokemon__image {
-            width: 140px;
-            height: 140px;
-            z-index: 2;
-            position: absolute;
-            top: 25.5%; /* Posição ajustada para o novo design da imagem */
-            left: 50%;
-            transform: translate(-50%, -50%);
-            -webkit-filter: drop-shadow(5px 5px 5px rgba(0, 0, 0, 0.4));
-            filter: drop-shadow(5px 5px 5px rgba(0, 0, 0, 0.4));
-        }
+const renderPokemon = async(pokemon) => {
+    pokemonName.innerHTML = 'Loading...';
+    pokemonNumber.innerHTML = '';
+    
+    // Toca a música se ainda não tiver sido tocada
+    if (!musicPlayed) {
+      try {
+        await pokemonAudio.play();
+        musicPlayed = true; // Define a variável como true para não tocar novamente
+      } catch (error) {
+        console.error("Erro ao tocar a música:", error);
+      }
+    }
 
-        .form {
-            position: absolute;
-            bottom: 23.5%; /* Posição ajustada para o novo design da imagem */
-            left: 50%;
-            transform: translateX(-50%);
-            z-index: 3;
-            width: 80%;
-            max-width: 250px;
-        }
-        
-        .input__search {
-            width: 100%;
-            padding: 10px 15px;
-            border: 2px solid #3b4cca;
-            border-radius: 10px;
-            font-size: 1rem;
-            outline: none;
-            transition: border-color 0.3s;
-            text-align: center;
-        }
+    const data = await fetchPokemon(pokemon);
 
-        .input__search:focus {
-            border-color: #ffde00;
-        }
+    if (data) {
+        pokemonImage.style.display = 'block';
+        pokemonName.innerHTML = data.name;
+        pokemonNumber.innerHTML = data.id;
+        pokemonImage.src = data['sprites']['versions']['generation-v']['black-white']['animated']['front_default'];
+        input.value = '';
+        searchPokemon = data.id;
+    } else {
+        pokemonImage.style.display = 'none';
+        pokemonName.innerHTML = 'Not found :c';
+        pokemonNumber.innerHTML = '';
+    }
+}
 
-        .buttons {
-            display: flex;
-            justify-content: center;
-            width: 100%;
-            position: absolute;
-            bottom: 12%; /* Posição ajustada para o novo design da imagem */
-            left: 50%;
-            transform: translateX(-50%);
-            gap: 20px;
-            z-index: 3;
-        }
+form.addEventListener('submit', (event) => {
+    event.preventDefault();
+    renderPokemon(input.value.toLowerCase());
+});
 
-        .button {
-            padding: 12px 20px;
-            border: none;
-            border-radius: 10px;
-            cursor: pointer;
-            font-weight: 700;
-            font-size: 1rem;
-            color: #fff;
-            background-color: #ffde00;
-            transition: transform 0.2s, box-shadow 0.2s;
-        }
+buttonPrev.addEventListener('click', () => {
+    if (searchPokemon > 1) {
+        searchPokemon -= 1;
+        renderPokemon(searchPokemon);
+    }
+});
 
-        .button:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 10px rgba(0, 0, 0, 0.2);
-        }
+buttonNext.addEventListener('click', () => {
+    searchPokemon += 1;
+    renderPokemon(searchPokemon);
+});
 
-        .button:active {
-            transform: translateY(0);
-        }
-
-    </style>
-</head>
-<body>
-
-    <audio id="audio" src="./pokemon-ringtone.mp3"></audio>
-
-    <main>
-        <!-- Use o caminho relativo para a imagem da sua pokedex no seu repositório do GitHub -->
-        <!-- Substitua este link pelo caminho da sua imagem, por exemplo: "./images/pokedex.png" -->
-        <img src="https://placehold.co/450x600/e62828/fff?text=Pokedex" alt="pokedex" class="pokedex" />
-        
-        <!-- O conteúdo será sobreposto à imagem da pokedex -->
-        <img src="#" alt="pokemon" class="pokemon__image" />
-
-        <h1 class="pokemon__data">
-            <span class="pokemon__number"></span> -
-            <span class="pokemon__name"></span>
-        </h1>
-
-        <form class="form">
-            <input
-                type="search"
-                class="input__search"
-                placeholder="Nome ou Número"
-                required
-            />
-        </form>
-
-        <div class="buttons">
-            <button class="button btn-prev">&lt; Anterior</button>
-            <button class="button btn-next">Próximo &gt;</button>
-        </div>
-    </main>
-
-    <script>
-        const pokemonName = document.querySelector('.pokemon__name');
-        const pokemonNumber = document.querySelector('.pokemon__number');
-        const pokemonImage = document.querySelector('.pokemon__image');
-        const audio = document.getElementById('audio');
-
-        let searchPokemon = 1;
-
-        const fetchPokemon = async (pokemon) => {
-            const APIResponse = await fetch(`https://pokeapi.co/api/v2/pokemon/${pokemon}`);
-
-            if (APIResponse.status === 200) {
-                const data = await APIResponse.json();
-                return data;
-            }
-        }
-
-        const renderPokemon = async (pokemon, playAudio = true) => {
-            pokemonName.innerHTML = 'Carregando...';
-            pokemonNumber.innerHTML = '';
-            pokemonImage.style.display = 'none';
-
-            const data = await fetchPokemon(pokemon);
-
-            if (data) {
-                pokemonImage.style.display = 'block';
-                pokemonName.innerHTML = data.name;
-                pokemonNumber.innerHTML = data.id;
-
-                const animatedSprite = data.sprites.versions['generation-v']['black-white'].animated.front_default;
-                
-                if (animatedSprite) {
-                    pokemonImage.src = animatedSprite;
-                } else {
-                    pokemonImage.src = data.sprites.front_default;
-                }
-
-                input.value = '';
-                searchPokemon = data.id;
-                
-                // Toca o som da Pokedex apenas se a flag playAudio for verdadeira
-                if (audio && playAudio) {
-                    audio.play();
-                }
-
-            } else {
-                pokemonImage.style.display = 'none';
-                pokemonName.innerHTML = 'Não encontrado :c';
-                pokemonNumber.innerHTML = '';
-            }
-        }
-        
-        // Assegura que o formulário e os botões de navegação são definidos
-        const form = document.querySelector('.form');
-        const input = document.querySelector('.input__search');
-        const buttonPrev = document.querySelector('.btn-prev');
-        const buttonNext = document.querySelector('.btn-next');
-
-        form.addEventListener('submit', (event) => {
-            event.preventDefault();
-            // A chamada para a pesquisa do formulário toca o áudio
-            renderPokemon(input.value.toLowerCase());
-        });
-
-        buttonPrev.addEventListener('click', () => {
-            if (searchPokemon > 1) {
-                searchPokemon -= 1;
-                // A chamada para o botão anterior toca o áudio
-                renderPokemon(searchPokemon);
-            }
-        });
-
-        buttonNext.addEventListener('click', () => {
-            searchPokemon += 1;
-            // A chamada para o botão próximo toca o áudio
-            renderPokemon(searchPokemon);
-        });
-
-        // Carrega o primeiro Pokémon assim que a página é carregada, mas sem tocar o áudio
-        renderPokemon(searchPokemon, false);
-    </script>
-</body>
-</html>
+renderPokemon(searchPokemon);

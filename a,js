@@ -7,6 +7,11 @@ const input = document.querySelector('.input__search');
 const buttonPrev = document.querySelector('.btn-prev');
 const buttonNext = document.querySelector('.btn-next');
 
+// Pega a referência para o elemento de áudio
+const pokemonAudio = document.getElementById('audio');
+
+// Variável de controle para tocar a música apenas uma vez
+let musicPlayed = false;
 let searchPokemon = 1;
 
 const fetchPokemon = async(pokemon) => {
@@ -19,9 +24,18 @@ const fetchPokemon = async(pokemon) => {
 }
 
 const renderPokemon = async(pokemon) => {
-
     pokemonName.innerHTML = 'Loading...';
     pokemonNumber.innerHTML = '';
+    
+    // Toca a música se ainda não tiver sido tocada
+    if (!musicPlayed) {
+      try {
+        await pokemonAudio.play();
+        musicPlayed = true; // Define a variável como true para não tocar novamente
+      } catch (error) {
+        console.error("Erro ao tocar a música:", error);
+      }
+    }
 
     const data = await fetchPokemon(pokemon);
 
@@ -29,7 +43,15 @@ const renderPokemon = async(pokemon) => {
         pokemonImage.style.display = 'block';
         pokemonName.innerHTML = data.name;
         pokemonNumber.innerHTML = data.id;
-        pokemonImage.src = data['sprites']['versions']['generation-v']['black-white']['animated']['front_default'];
+        
+        // Verifica se a imagem animada existe. Se não, usa a estática.
+        const animatedSprite = data.sprites.versions['generation-v']['black-white']['animated']['front_default'];
+        if (animatedSprite) {
+            pokemonImage.src = animatedSprite;
+        } else {
+            pokemonImage.src = data.sprites.front_default;
+        }
+        
         input.value = '';
         searchPokemon = data.id;
     } else {
@@ -41,7 +63,7 @@ const renderPokemon = async(pokemon) => {
 
 form.addEventListener('submit', (event) => {
     event.preventDefault();
-    renderPokemon(input.value.toLowerCase());
+    renderPokemon(input.value.toLowerCase().trim());
 });
 
 buttonPrev.addEventListener('click', () => {
